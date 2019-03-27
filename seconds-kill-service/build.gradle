@@ -1,0 +1,5 @@
+dependencies {
+    compile project(":seconds-kill-api")
+    // druid
+    compile 'com.alibaba:druid-spring-boot-starter:1.1.10'
+}

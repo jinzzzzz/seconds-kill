@@ -1,0 +1,13 @@
+pluginManagement {
+	repositories {
+		gradlePluginPortal()
+	}
+}
+rootProject.name = 'pyramid'
+include 'activity-api'
+include 'activity-service'
+include 'user-api'
+include 'user-service'
+include 'seconds-kill-api'
+include 'seconds-kill-service'
+

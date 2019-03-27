@@ -1,0 +1,10 @@
+pluginManagement {
+	repositories {
+		gradlePluginPortal()
+	}
+}
+rootProject.name = 'seconds-kill'
+include 'seconds-kill-api'
+include 'seconds-kill-service'
+include 'seconds-kill-web'
+
