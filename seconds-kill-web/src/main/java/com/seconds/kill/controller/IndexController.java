@@ -1,5 +1,6 @@
 package com.seconds.kill.controller;
 
+import com.seconds.kill.annotation.RedisLimit;
 import com.seconds.kill.pojo.Stock;
 import com.seconds.kill.service.OrderService;
 import com.seconds.kill.service.StockService;
@@ -43,6 +44,7 @@ public class IndexController {
         return stockService.getStock(sid);
     }
 
+    @RedisLimit(key = "placeOrder", period = 10, count = 100, name="秒杀")
     @GetMapping("/placeOrder/{sid}")
     public String createWrongOrder(@PathVariable int sid) {
         logger.info("sid=[{}]", sid);
