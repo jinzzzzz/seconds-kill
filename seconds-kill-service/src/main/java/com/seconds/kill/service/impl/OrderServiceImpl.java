@@ -44,11 +44,7 @@ public class OrderServiceImpl implements OrderService {
         //校验库存
         Stock stock = checkStockByRedis(sid);
 
-        //直接扣库存
-        //saleStock(stock);
-
-
-        saleStockOptimistic(stock);
+        saleStock(stock);
 
         //创建订单
         int id = createOrder(stock);
@@ -56,22 +52,18 @@ public class OrderServiceImpl implements OrderService {
         return id;
     }
 
-    //从缓存校验库存
+    //从缓存校验库存，并使用redis decr命令递减库存
     private Stock checkStockByRedis(int sid) throws Exception {
-        Integer count = Integer.parseInt(redisTemplate.opsForValue().get(RedisKeys.STOCK_COUNT + sid));
-        Integer sale = Integer.parseInt(redisTemplate.opsForValue().get(RedisKeys.STOCK_SALE + sid));
-
-
-        if (count.equals(sale)){
-            throw new RuntimeException("库存不足 Redis currentCount=" + sale);
+        //自增
+        Integer sale=redisTemplate.opsForValue().increment(RedisKeys.STOCK_SALE + sid,1).intValue();
+        //递减
+        Long count =  redisTemplate.opsForValue().decrement(RedisKeys.STOCK_COUNT + sid);
+        if (null!=count&&count < 0){
+            throw new RuntimeException("库存不足") ;
         }
-        Integer version = Integer.parseInt(redisTemplate.opsForValue().get(RedisKeys.STOCK_VERSION + sid));
         Stock stock = new Stock() ;
         stock.setId(sid);
-        stock.setCount(count);
         stock.setSale(sale);
-        stock.setVersion(version);
-
         return stock;
     }
 
@@ -84,17 +76,6 @@ public class OrderServiceImpl implements OrderService {
         return stock;
     }
 
-    //乐观锁更新库存,更新Redis
-    private void saleStockOptimistic(Stock stock) {
-        int count = stockMapper.updateByOptimistic(stock);
-        if (count == 0){
-            throw new RuntimeException("库存不足") ;
-        }
-        //自增
-        redisTemplate.opsForValue().increment(RedisKeys.STOCK_SALE + stock.getId(),1) ;
-        redisTemplate.opsForValue().increment(RedisKeys.STOCK_VERSION + stock.getId(),1) ;
-    }
-
 
     private int createOrder(Stock stock) {
         StockOrder order = new StockOrder();
@@ -104,11 +85,10 @@ public class OrderServiceImpl implements OrderService {
         return id;
     }
 
-    //直接更新库存，存在超卖问题
+    //更新数据库
     private int saleStock(Stock stock) {
         stock.setSale(stock.getSale() + 1);
         return stockMapper.updateByPrimaryKeySelective(stock);
     }
-
 
 }

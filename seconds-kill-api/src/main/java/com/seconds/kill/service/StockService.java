@@ -12,13 +12,12 @@ import java.util.List;
 public interface StockService {
 
     /**
-     * 获取当前库存
-     * @return
-     * @throws Exception
+     * 获取库存列表
      */
-    Integer getCurrentCount() throws Exception;
-
     List<Stock> getStockList();
 
+    /**
+     * 获取库存并写入缓存
+     */
     Integer getStock(int sid);
 }

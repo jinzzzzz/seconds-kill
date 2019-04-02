@@ -15,9 +15,4 @@ public class RedisKeys {
      * 已售数量
      */
     public final static String STOCK_SALE = "stock_sale_";
-
-    /**
-     * 版本
-     */
-    public final static String STOCK_VERSION = "stock_version_";
 }

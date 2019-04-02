@@ -25,19 +25,6 @@ public class StockServiceImpl implements StockService {
     @Autowired
     private StockMapper stockMapper;
 
-    @Override
-    public Integer getCurrentCount() throws Exception {
-        String count = redisTemplate.opsForValue().get(RedisKeys.STOCK_COUNT + 1);
-        if (count == null) {
-            Stock stock = stockMapper.selectByPrimaryKey(1);
-            count = stock.getCount().toString() ;
-            redisTemplate.opsForValue().set(RedisKeys.STOCK_COUNT + 1, stock.getCount().toString());
-            redisTemplate.opsForValue().set(RedisKeys.STOCK_SALE + 1, stock.getSale().toString());
-            redisTemplate.opsForValue().set(RedisKeys.STOCK_VERSION + 1, stock.getVersion().toString());
-        }
-
-        return Integer.parseInt(count);
-    }
 
     @Override
     public List<Stock> getStockList(){
@@ -52,7 +39,6 @@ public class StockServiceImpl implements StockService {
             Integer count=stock.getCount();
             redisTemplate.opsForValue().set(RedisKeys.STOCK_COUNT + sid,count.toString());
             redisTemplate.opsForValue().set(RedisKeys.STOCK_SALE + sid,"0");
-            redisTemplate.opsForValue().set(RedisKeys.STOCK_VERSION + stock.getId(),"0") ;
             return count;
         }
         return 0;
