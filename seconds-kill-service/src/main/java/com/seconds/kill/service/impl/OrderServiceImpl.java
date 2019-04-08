@@ -1,6 +1,8 @@
 package com.seconds.kill.service.impl;
 
+import com.alibaba.fastjson.JSONObject;
 import com.seconds.kill.api.constant.RedisKeys;
+import com.seconds.kill.common.KafkaHandler;
 import com.seconds.kill.mapper.StockOrderMapper;
 import com.seconds.kill.mapper.StockMapper;
 import com.seconds.kill.pojo.Stock;
@@ -9,9 +11,9 @@ import com.seconds.kill.service.OrderService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.apache.dubbo.config.annotation.Service;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -34,9 +36,9 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private RedisTemplate<String,String> redisTemplate ;
 
+    @Autowired
+    private KafkaTemplate<String, String> kafkaTemplate;
 
-    @Value("${kafka.topic}")
-    private String kafkaTopic ;
 
     @Override
     public int placeOrder(int sid) throws Exception{
@@ -44,26 +46,32 @@ public class OrderServiceImpl implements OrderService {
         //校验库存
         Stock stock = checkStockByRedis(sid);
 
-        saleStock(stock);
+        sendKafkaMessage(stock);
+        //saleStock(stock);
 
         //创建订单
-        int id = createOrder(stock);
+        //int id = createOrder(stock);
 
-        return id;
+        return 0;
+    }
+
+    /**
+     * 将订单消息发送到Kafka
+     */
+    private void sendKafkaMessage(Stock stock) {
+        kafkaTemplate.send(KafkaHandler.kafkaTopic,JSONObject.toJSONString(stock));
     }
 
     //从缓存校验库存，并使用redis decr命令递减库存
     private Stock checkStockByRedis(int sid) throws Exception {
-        //自增
-        Integer sale=redisTemplate.opsForValue().increment(RedisKeys.STOCK_SALE + sid,1).intValue();
         //递减
-        Long count =  redisTemplate.opsForValue().decrement(RedisKeys.STOCK_COUNT + sid);
+        Long count = redisTemplate.opsForValue().decrement(RedisKeys.STOCK_COUNT + sid);
         if (null!=count&&count < 0){
             throw new RuntimeException("库存不足") ;
         }
+        //自增
         Stock stock = new Stock() ;
         stock.setId(sid);
-        stock.setSale(sale);
         return stock;
     }
 
